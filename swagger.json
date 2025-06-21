@@ -1,0 +1,50 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "API de Produtos",
+    "version": "1.0.0",
+    "description": "Documentação da API de Produtos usando Swagger"
+  },
+  "host": "localhost:3001",
+  "basePath": "/",
+  "schemes": ["http"],
+  "paths": {
+    "/produtos": {
+      "get": { "summary": "Listar todos os produtos", "responses": { "200": { "description": "Sucesso" } } },
+      "post": {
+        "summary": "Criar novo produto",
+        "parameters": [{ "in": "body", "name": "produto", "schema": { "$ref": "#/definitions/Produto" } }],
+        "responses": { "201": { "description": "Criado com sucesso" } }
+      }
+    },
+    "/produtos/{id}": {
+      "get": { "summary": "Buscar produto por ID", "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }], "responses": { "200": { "description": "Sucesso" } } },
+      "put": { "summary": "Atualizar produto", "parameters": [
+        { "name": "id", "in": "path", "required": true, "type": "string" },
+        { "in": "body", "name": "produto", "schema": { "$ref": "#/definitions/Produto" } }
+      ], "responses": { "200": { "description": "Atualizado" } } },
+      "delete": { "summary": "Deletar produto", "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }], "responses": { "200": { "description": "Deletado" } } }
+    },
+    "/produtos/nome/{nome}": {
+      "get": {
+        "summary": "Buscar produtos por nome",
+        "parameters": [{ "name": "nome", "in": "path", "required": true, "type": "string" }],
+        "responses": { "200": { "description": "Sucesso" } }
+      }
+    }
+  },
+  "definitions": {
+    "Produto": {
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string" },
+        "descricao": { "type": "string" },
+        "cor": { "type": "string" },
+        "peso": { "type": "number" },
+        "tipo": { "type": "string" },
+        "preco": { "type": "number" },
+        "dataCadastro": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
