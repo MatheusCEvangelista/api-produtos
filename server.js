@@ -6,7 +6,6 @@ const produtoRoutes = require('./routes/produto.routes');
 const swaggerDocument = require('./swagger.json');
 require('dotenv').config();
 
-// Desativa o buffering implícito do Mongoose
 mongoose.set('bufferCommands', false);
 
 async function startServer() {
@@ -19,7 +18,7 @@ async function startServer() {
     });
 
     console.log('✅ Conectado ao MongoDB');
-    console.log('⛓ Estado da conexão:', mongoose.connection.readyState); // 1 = conectado
+    console.log('⛓ Estado da conexão:', mongoose.connection.readyState);
 
     const app = express();
     const PORT = process.env.PORT || 3001;
@@ -30,7 +29,7 @@ async function startServer() {
     app.use('/produtos', produtoRoutes);
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-    // Função para listar rotas com método HTTP e caminho, incluindo rotas aninhadas com prefixos
+    // Função para listar rotas
     function listarRotas(app) {
       const rotas = [];
 
@@ -62,14 +61,11 @@ async function startServer() {
       return rotas;
     }
 
-    const server = app.listen(PORT, () => {
+    // ⚠️ Aqui está o ponto importante: host = '0.0.0.0'
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
 
       try {
-        if (!app._router) {
-          app._router = express.Router();
-        }
-
         const rotas = listarRotas(app);
         console.log('📡 Rotas disponíveis:', rotas.length ? rotas : '[Nenhuma rota encontrada]');
       } catch (e) {
