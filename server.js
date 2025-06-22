@@ -30,6 +30,11 @@ async function startServer() {
     app.use('/produtos', produtoRoutes);
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+    // ✅ Rota principal para evitar erro 502 no Render
+    app.get('/', (req, res) => {
+      res.send('✅ API de Produtos rodando com sucesso!');
+    });
+
     // Função robusta para listar rotas (inclui rotas aninhadas)
     function listarRotas(app) {
       if (!app._router || !app._router.stack) return [];
@@ -38,11 +43,9 @@ async function startServer() {
 
       app._router.stack.forEach((middleware) => {
         if (middleware.route) {
-          // rota simples
           const methods = Object.keys(middleware.route.methods).map(m => m.toUpperCase()).join(', ');
           rotas.push(`${methods} ${middleware.route.path}`);
-        } else if (middleware.name === 'router' && middleware.handle && middleware.handle.stack) {
-          // rotas aninhadas
+        } else if (middleware.name === 'router' && middleware.handle?.stack) {
           middleware.handle.stack.forEach((handler) => {
             if (handler.route) {
               const methods = Object.keys(handler.route.methods).map(m => m.toUpperCase()).join(', ');
