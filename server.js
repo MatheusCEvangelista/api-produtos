@@ -6,6 +6,7 @@ const produtoRoutes = require('./routes/produto.routes');
 const swaggerDocument = require('./swagger.json');
 require('dotenv').config();
 
+// Desativa o buffering implícito do Mongoose
 mongoose.set('bufferCommands', false);
 
 async function startServer() {
@@ -18,7 +19,7 @@ async function startServer() {
     });
 
     console.log('✅ Conectado ao MongoDB');
-    console.log('⛓ Estado da conexão:', mongoose.connection.readyState);
+    console.log('⛓ Estado da conexão:', mongoose.connection.readyState); // 1 = conectado
 
     const app = express();
     const PORT = process.env.PORT || 3001;
@@ -29,48 +30,36 @@ async function startServer() {
     app.use('/produtos', produtoRoutes);
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-    // Função para listar rotas
+    // Função robusta para listar rotas (inclui rotas aninhadas)
     function listarRotas(app) {
+      if (!app._router || !app._router.stack) return [];
+
       const rotas = [];
 
-      function processarStack(stack, prefix = '') {
-        stack.forEach((middleware) => {
-          if (middleware.route) {
-            const methods = Object.keys(middleware.route.methods)
-              .map(m => m.toUpperCase())
-              .join(', ');
-            rotas.push(`${methods} ${prefix}${middleware.route.path}`);
-          } else if (middleware.name === 'router' && middleware.handle.stack) {
-            const path = middleware.regexp
-              ? extrairPrefixoPath(middleware.regexp)
-              : '';
-            processarStack(middleware.handle.stack, prefix + path);
-          }
-        });
-      }
+      app._router.stack.forEach((middleware) => {
+        if (middleware.route) {
+          // rota simples
+          const methods = Object.keys(middleware.route.methods).map(m => m.toUpperCase()).join(', ');
+          rotas.push(`${methods} ${middleware.route.path}`);
+        } else if (middleware.name === 'router' && middleware.handle && middleware.handle.stack) {
+          // rotas aninhadas
+          middleware.handle.stack.forEach((handler) => {
+            if (handler.route) {
+              const methods = Object.keys(handler.route.methods).map(m => m.toUpperCase()).join(', ');
+              rotas.push(`${methods} ${handler.route.path}`);
+            }
+          });
+        }
+      });
 
-      function extrairPrefixoPath(regexp) {
-        const match = regexp.toString()
-          .replace('/^\\', '')
-          .replace('\\/?(?=\\/|$)/i', '')
-          .match(/^[^\\]+/);
-        return match ? match[0].replace(/\\\//g, '/') : '';
-      }
-
-      processarStack(app._router.stack);
       return rotas;
     }
 
-    // ⚠️ Aqui está o ponto importante: host = '0.0.0.0'
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
 
-      try {
-        const rotas = listarRotas(app);
-        console.log('📡 Rotas disponíveis:', rotas.length ? rotas : '[Nenhuma rota encontrada]');
-      } catch (e) {
-        console.error('⚠️ Erro ao listar rotas:', e.message);
-      }
+      const rotas = listarRotas(app);
+      console.log('📡 Rotas disponíveis:', rotas.length ? rotas : '[Nenhuma rota encontrada]');
     });
 
     server.on('error', (err) => {
